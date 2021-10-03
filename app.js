@@ -63,3 +63,99 @@ const galleryItems = [
     description: 'Lighthouse Coast Sea',
   },
 ];
+
+const refs = {
+  galleryContainer: document.querySelector('ul.js-gallery'),
+  modalWindow: document.querySelector('.js-lightbox'),
+  closeBtn: document.querySelector('.lightbox__button'),
+  currentImage: document.querySelector('.lightbox__image'),
+  overlay: document.querySelector('.lightbox__overlay'),
+};
+
+const galleryMarkup = createGalleryCard(galleryItems);
+refs.galleryContainer.insertAdjacentHTML('beforeend', galleryMarkup);
+
+refs.galleryContainer.addEventListener('click', openModalWindow);
+refs.closeBtn.addEventListener('click', closeModalWindow);
+refs.overlay.addEventListener('click', closeModalWindow);
+
+function createGalleryCard(galleryItem) {
+  return galleryItem
+    .map(({ preview, original, description }) => {
+      return `
+    <li class="gallery__item">
+    <a class="gallery__link"
+    href="${original}">
+    <img class="gallery__image"
+    src="${preview}"
+    data-source="${original}"
+    alt="${description}" />
+    </a>
+    </li>`;
+    })
+    .join('');
+}
+
+function openModalWindow(evt) {
+  if (!evt.target.classList.contains('gallery__image')) return;
+  evt.preventDefault();
+  refs.currentImage.attributes.src.nodeValue = '';
+  refs.modalWindow.classList.add('is-open');
+  reloadImage(evt.target.dataset.source, evt.target.alt);
+  window.addEventListener('keydown', pressKey);
+
+  // console.log(evt.target.dataset.source);
+}
+
+function closeModalWindow() {
+  refs.modalWindow.classList.remove('is-open');
+  window.removeEventListener('keydown', pressKey);
+}
+
+// function closeModalByKey(evt) {
+//   if (evt.code === 'Escape') {
+//     closeModalWindow();
+//   }
+// }
+
+function reloadImage(src, alt) {
+  refs.currentImage.src = src;
+  refs.currentImage.alt = alt;
+}
+
+function pressKey(evt) {
+  if (!refs.modalWindow.classList.contains('is-open')) return;
+  if (evt.code === 'Escape') {
+    closeModalWindow();
+  }
+  if (evt.code === 'ArrowLeft') {
+    prevImage();
+  }
+  if (evt.code === 'ArrowRight') {
+    nextImage();
+  }
+}
+
+function nextImage() {
+  let currentImageIndex = imageIndex(refs.currentImage.getAttribute('src'));
+  if (currentImageIndex === galleryItems.length - 1) currentImageIndex = -1;
+  reloadImage(
+    galleryItems[currentImageIndex + 1].original,
+    galleryItems[currentImageIndex + 1].description
+  );
+}
+
+function prevImage() {
+  let currentImageIndex = imageIndex(refs.currentImage.getAttribute('src'));
+  if (currentImageIndex === 0) currentImageIndex = galleryItems.length;
+  reloadImage(
+    galleryItems[currentImageIndex - 1].original,
+    galleryItems[currentImageIndex - 1].description
+  );
+}
+
+function imageIndex(src) {
+  return galleryItems.indexOf(
+    galleryItems.find(element => element.original === src)
+  );
+}
